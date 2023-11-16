@@ -396,3 +396,51 @@ table(observed = df16sValidate$genus_name, predicted = predict16sValidate4)
 print(classifier1)
 print(classifier4)
 
+------------####Edit3####-------------------------------------------------------
+# Define functions to build and validate random forest classifiers
+build_classifier <- function(predictor_indices, num_trees) {
+  classifier <- randomForest(
+    x = df16sTraining[ , predictor_indices],
+    y = as.factor(df16sTraining$genus_name),
+    ntree = num_trees,
+    importance = TRUE
+  )
+  return(classifier)
+}
+
+validate_classifier <- function(classifier, validation_data, predictor_indices) {
+  predictions <- predict(classifier, validation_data[, predictor_indices])
+  return(predictions)
+}
+
+# Build and validate classifiers using the functions
+classifier1 <- build_classifier(9:11, 40)
+valication1 <- validate_classifier(classifier1, df16sValidate, c(92, 9:11))
+
+classifier2 <- build_classifier(12:27, 50)
+validation2 <- validate_classifier(classifier2, df16sValidate, 12:27)
+
+classifier3 <- build_classifier(28:91, 50)
+validation3 <- validate_classifier(classifier3, df16sValidate, 28:91)
+
+classifier4 <- build_classifier(92:347, 100)
+validation4 <- validate_classifier(classifier4, df16sValidate, 92:347)
+
+
+# Create confusion matrix plot 
+matrix_table <- table(observed = df16sValidate$genus_name, 
+                      predicted = valication1)
+# Store the table as a tibble
+matrix_tibble <- as_tibble(matrix_table)
+# Plot the tibble as a confusion matrix plot
+plot_1 <- plot_confusion_matrix(matrix_tibble, target_col = "observed", 
+                                prediction_col = "predicted", counts_col = "n", 
+                                add_sums = TRUE, add_normalized = FALSE,
+                                add_col_percentages = FALSE,
+                                add_row_percentages = FALSE, palette = "Purples", 
+                                sums_settings = sum_tile_settings(palette = "Oranges", 
+                                                                  label = "Total"))
+--------------------------------------------------------------------------------
+
+  
+  
