@@ -19,6 +19,8 @@ ncbi_search_result <- entrez_search(
   term = "Bifidobacterium OR Collinsella AND 16S rRNA AND 500:1000[SLEN])",
   use_history=TRUE)
 
+# changing format of code
+
 #search return count
 ncbi_search_result$count
 
