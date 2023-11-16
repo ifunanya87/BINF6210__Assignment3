@@ -5,7 +5,7 @@
 library(rentrez)
 library(seqinr)
 library(Biostrings)
-library("tidyverse")
+library(tidyverse)
 library(randomForest)
 
 
@@ -63,7 +63,6 @@ unique(organism)
 
 #fetch fasta files
 
-
 #search result ids
 ncbi_ids <- ncbi_search_result2$ids
 
@@ -107,6 +106,23 @@ dfSeq <- do.call("rbind", l_dfFastaFiles)
 length(unique(dfSeq$Title))
 unique(dfSeq$Title)
 
+----------####Edit####----------------------------------------------------------
+# I would recommend using the helper functions "Entrez_Functions.R" to fetch data from
+# online database. These functions are provided on Courselink.
+# It replaces all codes from line 12 - 107
+
+# If you would like to specify your own maximum number of hits, I would recommend changing it in "Entrez_Functions.R" and upload the modified version to your repository.
+source("Entrez_Functions.R")
+
+# fetch fasta files from NCBI
+FetchFastaFiles(
+  searchTerm = "Bifidobacterium OR Collinsella  AND 16S rRNA AND 500:1000[SLEN]", 
+  seqsPerFile = 100, fastaFileName = "entrez_fetch.fasta")
+
+# merge all fasta files and store it as a data frame called dfNCBI
+dfNCBI <- MergeFastaFiles(filePattern = "entrez_fetch.fasta*")
+--------------------------------------------------------------------------------
+  
 
 ---------####Part 3-----------
 
