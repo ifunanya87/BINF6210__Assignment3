@@ -5,8 +5,9 @@
 library(rentrez)
 library(seqinr)
 library(Biostrings)
-library("tidyverse")
+library(tidyverse)
 library(randomForest)
+library(ggplot2)
 
 
 --------####Part 1------------
@@ -14,9 +15,12 @@ library(randomForest)
 #search database ("nuccore") for 16S rRNA of Bifidobacterium and Collinsella
 #Both are gram-positive bacteria with a high G + C content
 
-ncbi_search_result <- entrez_search(db = "nuccore",
-                                   term = "Bifidobacterium OR Collinsella AND 16S rRNA AND 500:1000[SLEN])",
-                                   use_history=TRUE)
+ncbi_search_result <- entrez_search(
+  db = "nuccore",
+  term = "Bifidobacterium OR Collinsella AND 16S rRNA AND 500:1000[SLEN])",
+  use_history=TRUE)
+
+# changing format of code
 
 #search return count
 ncbi_search_result$count
@@ -25,9 +29,8 @@ mxhit <- 2000
 
 #second search using maximum search return count
 ncbi_search_result2 <- entrez_search(db = "nuccore",
-                                    term = "Bifidobacterium OR Collinsella  AND 16S rRNA AND 500:1000[SLEN])",
-                                    retmax = mxhit,
-                                    use_history=TRUE)
+  term = "Bifidobacterium OR Collinsella  AND 16S rRNA AND 500:1000[SLEN])",
+  retmax = mxhit, use_history=TRUE)
 
 #search return count
 ncbi_search_result2$retmax
@@ -60,7 +63,6 @@ unique(organism)
 ----------####Part 2---------------
 
 #fetch fasta files
-
 
 #search result ids
 ncbi_ids <- ncbi_search_result2$ids
@@ -105,6 +107,33 @@ dfSeq <- do.call("rbind", l_dfFastaFiles)
 length(unique(dfSeq$Title))
 unique(dfSeq$Title)
 
+----------####Edit1####---------------------------------------------------------
+# I would recommend using the helper functions "Entrez_Functions.R" to fetch data from
+# online database. These functions are provided on Courselink.
+# It replaces all codes from line 12 - 107
+
+ncbi_search_result <- entrez_search(db = "nuccore",
+  term = "Bifidobacterium OR Collinsella AND 16S rRNA AND 500:1000[SLEN])",
+  use_history=TRUE)
+
+#search return count
+ncbi_search_result$count
+
+mxhit <- 2000
+
+# If you would like to specify your own maximum number of hits, I would recommend changing it in "Entrez_Functions.R" and upload the modified version to your repository.
+
+source("Entrez_Functions.R")
+
+# fetch fasta files from NCBI
+FetchFastaFiles(
+  searchTerm = "Bifidobacterium OR Collinsella  AND 16S rRNA AND 500:1000[SLEN]", 
+  seqsPerFile = 100, fastaFileName = "entrez_fetch.fasta")
+
+# merge all fasta files and store it as a data frame called dfNCBI
+dfNCBI <- MergeFastaFiles(filePattern = "entrez_fetch.fasta*")
+--------------------------------------------------------------------------------
+  
 
 ---------####Part 3-----------
 
@@ -202,6 +231,43 @@ dev.off()
 summary(nchar(df16s$Sequence2[df16s$genus_name == "Collinsella"]))
 summary(nchar(df16s$Sequence2[df16s$genus_name == "Bifidobacterium"]))
 
+-----####Edit2####--------------------------------------------------------------
+# I would recommend using ggplot to create histograms in R
+df16s %>%
+  filter(genus_name == "Bifidobacterium") %>%
+  ggplot(aes(x = nchar(Sequence2))) +
+  geom_histogram(bins = 20, fill = "mediumpurple", color = "black") +
+  ggtitle("Frequency Distribution of Bifidobacterium Sequence Lengths") +
+  xlab('Sequence Length (Nucleotides)') +
+  ylab('Frequency') +
+  # solid vertical lines represent the median
+  geom_vline(aes(xintercept = median(nchar(Sequence2))), 
+             color = "orange", linewidth = 1) +
+  # dashed lines represent the 1st & 3rd quartiles
+  geom_vline(aes(xintercept = quantile(nchar(Sequence2), probs = c(0.25))), 
+             color = "orange", linewidth = 1, linetype = "dashed") +
+  geom_vline(aes(xintercept = quantile(nchar(Sequence2), probs = c(0.75))), 
+             color = "orange", linewidth = 1, linetype = "dashed") +
+  theme(plot.title=element_text(size = 15))
+
+
+df16s %>%
+  filter(genus_name == "Collinsella") %>%
+  ggplot(aes(x = nchar(Sequence2))) +
+  geom_histogram(bins = 20, fill = "mediumpurple", color = "black") +
+  ggtitle("Frequency Distribution of Bifidobacterium Sequence Lengths") +
+  xlab('Sequence Length (Nucleotides)') +
+  ylab('Frequency') +
+  # solid vertical lines represent the median
+  geom_vline(aes(xintercept = median(nchar(Sequence2))), 
+             color = "orange", linewidth = 1) +
+  # dashed lines represent the 1st & 3rd quartiles
+  geom_vline(aes(xintercept = quantile(nchar(Sequence2), probs = c(0.25))), 
+             color = "orange", linewidth = 1, linetype = "dashed") +
+  geom_vline(aes(xintercept = quantile(nchar(Sequence2), probs = c(0.75))), 
+             color = "orange", linewidth = 1, linetype = "dashed") +
+  theme(plot.title=element_text(size = 15))
+--------------------------------------------------------------------------------
 
 
 ---------####Part 4---------
