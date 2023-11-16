@@ -14,9 +14,10 @@ library(randomForest)
 #search database ("nuccore") for 16S rRNA of Bifidobacterium and Collinsella
 #Both are gram-positive bacteria with a high G + C content
 
-ncbi_search_result <- entrez_search(db = "nuccore",
-                                   term = "Bifidobacterium OR Collinsella AND 16S rRNA AND 500:1000[SLEN])",
-                                   use_history=TRUE)
+ncbi_search_result <- entrez_search(
+  db = "nuccore",
+  term = "Bifidobacterium OR Collinsella AND 16S rRNA AND 500:1000[SLEN])",
+  use_history=TRUE)
 
 #search return count
 ncbi_search_result$count
@@ -25,9 +26,8 @@ mxhit <- 2000
 
 #second search using maximum search return count
 ncbi_search_result2 <- entrez_search(db = "nuccore",
-                                    term = "Bifidobacterium OR Collinsella  AND 16S rRNA AND 500:1000[SLEN])",
-                                    retmax = mxhit,
-                                    use_history=TRUE)
+  term = "Bifidobacterium OR Collinsella  AND 16S rRNA AND 500:1000[SLEN])",
+  retmax = mxhit, use_history=TRUE)
 
 #search return count
 ncbi_search_result2$retmax
