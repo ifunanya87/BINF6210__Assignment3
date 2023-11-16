@@ -107,10 +107,11 @@ dfSeq <- do.call("rbind", l_dfFastaFiles)
 length(unique(dfSeq$Title))
 unique(dfSeq$Title)
 
-----------####Edit1####---------------------------------------------------------
-# I would recommend using the helper functions "Entrez_Functions.R" to fetch data from
-# online database. These functions are provided on Courselink.
-# It replaces all codes from line 12 - 107
+
+----####Edit1####---------------------------------------------------------------
+# I would recommend using the helper functions "Entrez_Functions.R" to fetch 
+# data from online database. These functions are provided on Courselink.
+# Edit 1 replaces codes from line 12 - 107
 
 ncbi_search_result <- entrez_search(db = "nuccore",
   term = "Bifidobacterium OR Collinsella AND 16S rRNA AND 500:1000[SLEN])",
@@ -121,7 +122,9 @@ ncbi_search_result$count
 
 mxhit <- 2000
 
-# If you would like to specify your own maximum number of hits, I would recommend changing it in "Entrez_Functions.R" and upload the modified version to your repository.
+# If you would like to specify your own maximum number of hits, I recommend 
+# changing it in "Entrez_Functions.R". Then upload the modified version to your 
+# own repository.
 
 source("Entrez_Functions.R")
 
@@ -130,8 +133,8 @@ FetchFastaFiles(
   searchTerm = "Bifidobacterium OR Collinsella  AND 16S rRNA AND 500:1000[SLEN]", 
   seqsPerFile = 100, fastaFileName = "entrez_fetch.fasta")
 
-# merge all fasta files and store it as a data frame called dfNCBI
-dfNCBI <- MergeFastaFiles(filePattern = "entrez_fetch.fasta*")
+# merge all fasta files and store it as a data frame called dfSeq
+dfSeq <- MergeFastaFiles(filePattern = "entrez_fetch.fasta*")
 --------------------------------------------------------------------------------
   
 
@@ -231,13 +234,17 @@ dev.off()
 summary(nchar(df16s$Sequence2[df16s$genus_name == "Collinsella"]))
 summary(nchar(df16s$Sequence2[df16s$genus_name == "Bifidobacterium"]))
 
------####Edit2####--------------------------------------------------------------
-# I would recommend using ggplot to create histograms in R
+----####Edit2####--------------------------------------------------------------
+# I would recommend creating histograms using ggplot2 instead of base R. 
+# This package gives your the ability to customized your plots.
+# Edit 2 replaces codes from line 221 - 230
+
+# Figure 1.Histogram Illustrating the Distribution of Bifidobacterium 16s Sequence Length
 df16s %>%
   filter(genus_name == "Bifidobacterium") %>%
   ggplot(aes(x = nchar(Sequence2))) +
   geom_histogram(bins = 20, fill = "mediumpurple", color = "black") +
-  ggtitle("Frequency Distribution of Bifidobacterium Sequence Lengths") +
+  ggtitle("Frequency Distribution of Bifidobacterium 16s Sequence Lengths") +
   xlab('Sequence Length (Nucleotides)') +
   ylab('Frequency') +
   # solid vertical lines represent the median
@@ -251,11 +258,12 @@ df16s %>%
   theme(plot.title=element_text(size = 15))
 
 
+# Figure 2.Histogram Illustrating the Distribution of Collinsella 16s Sequence Length
 df16s %>%
   filter(genus_name == "Collinsella") %>%
   ggplot(aes(x = nchar(Sequence2))) +
   geom_histogram(bins = 20, fill = "mediumpurple", color = "black") +
-  ggtitle("Frequency Distribution of Bifidobacterium Sequence Lengths") +
+  ggtitle("Frequency Distribution of Collinsella 16s Sequence Lengths") +
   xlab('Sequence Length (Nucleotides)') +
   ylab('Frequency') +
   # solid vertical lines represent the median
@@ -388,59 +396,56 @@ predict16sValidate4 <- predict(classifier4, df16sValidate[, c(92, 92:347)])
 #confusion matrix.
 table(observed = df16sValidate$genus_name, predicted = predict16sValidate4)
 
-
-
-
 #check accuracy by viewing OOB estimate of error rate
 
 print(classifier1)
 print(classifier4)
 
+
 ------------####Edit3####-------------------------------------------------------
-# Define functions to build and validate random forest classifiers
+# I would recommend defining functions to reduce code redundancy and increase
+# code reusability
+# Edit 3 replaces code from line 354 - 396.
+
+# 1. Define function to build random forest classifiers using the training dataset
 build_classifier <- function(predictor_indices, num_trees) {
   classifier <- randomForest(
     x = df16sTraining[ , predictor_indices],
     y = as.factor(df16sTraining$genus_name),
     ntree = num_trees,
-    importance = TRUE
-  )
+    importance = TRUE)
   return(classifier)
 }
 
+
+# 2. Define function to test the prediction accuracy of classifiers using validation dataset
 validate_classifier <- function(classifier, validation_data, predictor_indices) {
   predictions <- predict(classifier, validation_data[, predictor_indices])
   return(predictions)
 }
 
-# Build and validate classifiers using the functions
-classifier1 <- build_classifier(9:11, 40)
-valication1 <- validate_classifier(classifier1, df16sValidate, c(92, 9:11))
 
-classifier2 <- build_classifier(12:27, 50)
-validation2 <- validate_classifier(classifier2, df16sValidate, 12:27)
-
-classifier3 <- build_classifier(28:91, 50)
-validation3 <- validate_classifier(classifier3, df16sValidate, 28:91)
-
-classifier4 <- build_classifier(92:347, 100)
-validation4 <- validate_classifier(classifier4, df16sValidate, 92:347)
-
-
-# Create confusion matrix plot 
-matrix_table <- table(observed = df16sValidate$genus_name, 
-                      predicted = valication1)
-# Store the table as a tibble
-matrix_tibble <- as_tibble(matrix_table)
-# Plot the tibble as a confusion matrix plot
-plot_1 <- plot_confusion_matrix(matrix_tibble, target_col = "observed", 
+# 3. Define function to create confusion matrix plots
+confusion_matrix_plot <- function(observed, predicted) {
+  # Create confusion matrix
+  matrix_table <- table(observed = observed, predicted = predicted)
+  # Store the table as a tibble
+  matrix_tibble <- as_tibble(matrix_table)
+  # Plot the tibble as a confusion matrix plot
+  plot <- plot_confusion_matrix(matrix_tibble, target_col = "observed", 
                                 prediction_col = "predicted", counts_col = "n", 
                                 add_sums = TRUE, add_normalized = FALSE,
                                 add_col_percentages = FALSE,
                                 add_row_percentages = FALSE, palette = "Purples", 
                                 sums_settings = sum_tile_settings(palette = "Oranges", 
                                                                   label = "Total"))
---------------------------------------------------------------------------------
+  return(plot)
+}
+
+# Build, validate, and plot random forest classifiers using the functions above
+classifier1 <- build_classifier(df16sTraining, c(92, 9:11), "genus_name", 40)
+valication1 <- validate_classifier(classifier1, df16sValidate, c(92, 9:11))
+plot1 < confusion_matrix_plot(df16sValidate$genus_name, valication1)
 
   
   
