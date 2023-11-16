@@ -7,6 +7,7 @@ library(seqinr)
 library(Biostrings)
 library(tidyverse)
 library(randomForest)
+library(ggplot2)
 
 
 --------####Part 1------------
