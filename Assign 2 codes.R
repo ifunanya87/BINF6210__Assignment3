@@ -20,8 +20,6 @@ ncbi_search_result <- entrez_search(
   term = "Bifidobacterium OR Collinsella AND 16S rRNA AND 500:1000[SLEN])",
   use_history=TRUE)
 
-# changing format of code
-
 #search return count
 ncbi_search_result$count
 
@@ -34,10 +32,6 @@ ncbi_search_result2 <- entrez_search(db = "nuccore",
 
 #search return count
 ncbi_search_result2$retmax
-
-
-#summary of search result
-#"ncbi_summ <- entrez_summary(db = "nuccore", id = ncbi_search_result2$ids)"---- this code returned a failure 414 response. So i will try to get summary by splitting the hits in parts and looping through the lists.
 
 #split search_result into groups of 200 hits
 searchsplit <- split(seq(1,length(ncbi_search_result2$ids)),
@@ -56,8 +50,6 @@ for (i in searchsplit){
 organism <- sapply(ncbi_summ, function(x) extract_from_esummary(x, elements = "organism"))
 
 unique(organism)
-
-#rm(searchsplit, ncbi_summ, i)
 
 
 ----------####Part 2---------------
@@ -94,7 +86,8 @@ fastaFiles <- list.files(pattern = "ncbi")
 l_fastaFiles <- lapply(fastaFiles, readDNAStringSet)
 
 #Convert to dataframe
-l_dfFastaFiles <- lapply(l_fastaFiles, function(x) data.frame(Title = names(x), Sequence = paste(x) ))
+l_dfFastaFiles <- lapply(
+  l_fastaFiles, function(x) data.frame(Title = names(x), Sequence = paste(x) ))
 
 # Combine the list of dataframes into one dataframe.
 dfSeq <- do.call("rbind", l_dfFastaFiles)
@@ -200,14 +193,16 @@ q3
 #do not want to remove Collinsella sequence length less than q1 to avoid having low number
 #so, firstly filtering Bifidobacterium to keep sequence length greater than or equal to q1 and those less than or equal to q3, and all Collinsella
 
-df16s <- df16s %>%
-  filter((str_count(Sequence2) >= q1 & str_count(Sequence2) <= q3 & genus_name == "Bifidobacterium") | genus_name == "Collinsella")
+df16s <- df16s %>% filter((
+  str_count(Sequence2) >= q1 & str_count(Sequence2) <= q3 & 
+    genus_name == "Bifidobacterium") | genus_name == "Collinsella")
 
 
 #secondly, keeping Collinsella sequence length less than or equal to q3, and all Bifidobacterium
 
-df16s <- df16s %>%
-  filter((str_count(Sequence2) <= q3 & genus_name == "Collinsella") | genus_name == "Bifidobacterium")
+df16s <- df16s %>% filter((str_count(Sequence2) <= q3 & 
+                             genus_name == "Collinsella") | 
+                             genus_name == "Bifidobacterium")
 
 #check count of each genus
 count(df16s, vars = genus_name)
@@ -236,16 +231,16 @@ summary(nchar(df16s$Sequence2[df16s$genus_name == "Bifidobacterium"]))
 
 ----####Edit2####--------------------------------------------------------------
 # I would recommend creating histograms using ggplot2 instead of base R. 
-# This package gives your the ability to customized your plots.
-# Edit 2 replaces codes from line 221 - 230
+# Consider using R Markdown to add figure captions.
+# Edit 2 replaces codes from line 216 - 225
 
 # Figure 1.Histogram Illustrating the Distribution of Bifidobacterium 16s Sequence Length
 df16s %>%
   filter(genus_name == "Bifidobacterium") %>%
   ggplot(aes(x = nchar(Sequence2))) +
-  geom_histogram(bins = 20, fill = "mediumpurple", color = "black") +
-  ggtitle("Frequency Distribution of Bifidobacterium 16s Sequence Lengths") +
-  xlab('Sequence Length (Nucleotides)') +
+  geom_histogram(bins = 15, fill = "mediumpurple", color = "black") +
+  ggtitle("Frequency Distribution of Bifidobacterium 16s rRNA Sequence Lengths") +
+  xlab('Sequence Length') +
   ylab('Frequency') +
   # solid vertical lines represent the median
   geom_vline(aes(xintercept = median(nchar(Sequence2))), 
@@ -255,16 +250,16 @@ df16s %>%
              color = "orange", linewidth = 1, linetype = "dashed") +
   geom_vline(aes(xintercept = quantile(nchar(Sequence2), probs = c(0.75))), 
              color = "orange", linewidth = 1, linetype = "dashed") +
-  theme(plot.title=element_text(size = 15))
+  theme(plot.title = element_text(size = 15))
 
 
 # Figure 2.Histogram Illustrating the Distribution of Collinsella 16s Sequence Length
 df16s %>%
   filter(genus_name == "Collinsella") %>%
   ggplot(aes(x = nchar(Sequence2))) +
-  geom_histogram(bins = 20, fill = "mediumpurple", color = "black") +
-  ggtitle("Frequency Distribution of Collinsella 16s Sequence Lengths") +
-  xlab('Sequence Length (Nucleotides)') +
+  geom_histogram(bins = 15, fill = "mediumpurple", color = "black") +
+  ggtitle("Frequency Distribution of Collinsella 16s rRNA Sequence Lengths") +
+  xlab('Sequence Length') +
   ylab('Frequency') +
   # solid vertical lines represent the median
   geom_vline(aes(xintercept = median(nchar(Sequence2))), 
@@ -274,7 +269,7 @@ df16s %>%
              color = "orange", linewidth = 1, linetype = "dashed") +
   geom_vline(aes(xintercept = quantile(nchar(Sequence2), probs = c(0.75))), 
              color = "orange", linewidth = 1, linetype = "dashed") +
-  theme(plot.title=element_text(size = 15))
+  theme(plot.title = element_text(size = 15))
 --------------------------------------------------------------------------------
 
 
@@ -356,7 +351,9 @@ names(df16s)
 
 #first classifier using k-mer 1 nucleotide proportions
 
-classifier1 <- randomForest(x = df16sTraining[, 9:11], y = as.factor(df16sTraining$genus_name), ntree = 40, importance = TRUE)
+classifier1 <- randomForest(x = df16sTraining[, 9:11], 
+                            y = as.factor(df16sTraining$genus_name), 
+                            ntree = 40, importance = TRUE)
 
 #check model performance on the validation data.
 table(df16sValidate$genus_name)
@@ -369,7 +366,9 @@ table(observed = df16sValidate$genus_name, predicted = predict16sValidate1)
 
 #second classifier using k-mer 2 nucleotide proportions
 
-classifier2 <- randomForest(x = df16sTraining[, 12:27], y = as.factor(df16sTraining$genus_name), ntree = 50, importance = TRUE)
+classifier2 <- randomForest(x = df16sTraining[, 12:27], 
+                            y = as.factor(df16sTraining$genus_name), 
+                            ntree = 50, importance = TRUE)
 
 predict16sValidate2 <- predict(classifier2, df16sValidate[, c(92, 12:27)])
 
@@ -379,7 +378,9 @@ table(observed = df16sValidate$genus_name, predicted = predict16sValidate2)
 
 #Third classifier using k-mer 3 nucleotide proportions
 
-classifier3 <- randomForest(x = df16sTraining[, 28:91], y = as.factor(df16sTraining$genus_name), ntree = 50, importance = TRUE)
+classifier3 <- randomForest(x = df16sTraining[, 28:91], 
+                            y = as.factor(df16sTraining$genus_name), 
+                            ntree = 50, importance = TRUE)
 
 predict16sValidate3 <- predict(classifier3, df16sValidate[, c(92, 28:91)])
 
@@ -389,7 +390,9 @@ table(observed = df16sValidate$genus_name, predicted = predict16sValidate3)
 
 #Fourth classifier using k-mer 4 nucleotide proportions
 
-classifier4 <- randomForest(x = df16sTraining[, 92:347], y = as.factor(df16sTraining$genus_name), ntree = 100, importance = TRUE)
+classifier4 <- randomForest(x = df16sTraining[, 92:347], 
+                            y = as.factor(df16sTraining$genus_name), 
+                            ntree = 100, importance = TRUE)
 
 predict16sValidate4 <- predict(classifier4, df16sValidate[, c(92, 92:347)])
 
@@ -402,25 +405,28 @@ print(classifier1)
 print(classifier4)
 
 
-------------####Edit3####-------------------------------------------------------
+----####Edit3####---------------------------------------------------------------
 # I would recommend defining functions to reduce code redundancy and increase
 # code reusability
-# Edit 3 replaces code from line 354 - 396.
+# Edit 3 replaces code from line 350 - 400.
 
 # 1. Define function to build random forest classifiers using the training dataset
-build_classifier <- function(predictor_indices, num_trees) {
-  classifier <- randomForest(
-    x = df16sTraining[ , predictor_indices],
-    y = as.factor(df16sTraining$genus_name),
+build_classifier <- function(dataset, predictor_indices, variable, num_trees) {
+  classifier <- randomForest::randomForest(
+    x = dataset[, predictor_indices],
+    y = as.factor(dataset$variable),
     ntree = num_trees,
-    importance = TRUE)
+    importance = TRUE
+  )
   return(classifier)
 }
 
 
-# 2. Define function to test the prediction accuracy of classifiers using validation dataset
-validate_classifier <- function(classifier, validation_data, predictor_indices) {
-  predictions <- predict(classifier, validation_data[, predictor_indices])
+# 2. Define function to test the prediction accuracy of classifiers using 
+# validation dataset
+
+validate_classifier <- function(classifier, dataset, predictor_indices) {
+  predictions <- predict(classifier, dataset[, predictor_indices])
   return(predictions)
 }
 
